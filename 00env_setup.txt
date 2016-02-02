@@ -1,0 +1,66 @@
+install qemu
+git clone http://git.qemu.org/git/qemu.git
+cd qemu
+./configure --help
+./configure --target-list=arm-softmmu
+make
+make install
+
+toolchain
+wget http://releases.linaro.org/14.09/components/toolchain/binaries/gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux.tar.xz
+tar -Jxf gcc-linaro-aarch64-linux-gnu-4.9-2014.09_linux.tar.xz
+
+build rootfs
+$ git clone git://git.buildroot.net/buildroot buildroot.git
+  $ cd buildroot.git
+  $ make menuconfig
+
+  Configure it
+
+  * Target Options -> Target Architecture(AArch64)
+  * Toolchain -> Toolchain type (External toolchain)
+  * Toolchain -> Toolchain (Linaro AArch64 14.02)
+  * System configuration -> Run a getty (login prompt) after boot      
+    (BR2_TARGET_GENERIC_GETTY)
+  * System configuration -> getty options -> TTY Port (ttyAMA0) 
+    (BR2_TARGET_GENERIC_GETTY_PORT)
+  * Target Packages -> Show packages that are also provided by busybox 
+    (BR2_PACKAGE_BUSYBOX_SHOW_OTHERS)
+  * Filesystem images -> cpio the root filesystem (for use as an initial RAM 
+    filesystem) (BR2_TARGET_ROOTFS_CPIO)
+    $ make
+
+//build busybox
+//make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- menuconfig
+//	a.选择静态编译：BusyboxSettings->Build options->BuildBusybox as a static binary
+//	b.取消Networkingutilities->iptunel
+//	c.取消Networkingutilities->inetd
+//make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+//make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- install
+
+build kernel
+make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=../out zzy_defconfig
+make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=../out -j4 Image
+
+run the kernel with rootfs on arm64 qemu
+$qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic -smp 1 -m 2048 -kernel out/arch/arm64/boot/Image --append "console=ttyAMA0"
+
+my kernel code
+git clone https://github.com/zzyjsjcom/zzy_kernel_code.git
+
+quit
+C a c // quit arm64 linux
+quit  // quit qemu
+
+dmesg log have no timestamp
+ echo Y > /sys/module/printk/parameters/time
+http://blog.tankywoo.com/2015/02/03/about-timestamp-in-dmesg.html
+https://blog.sleeplessbeastie.eu/2013/10/31/how-to-deal-with-dmesg-timestamps/
+
+http://stenliao.blogspot.tw/2014/10/run-aarch64-linux-on-qemu.html
+http://www.bennee.com/~alex/blog/2014/05/09/running-linux-in-qemus-aarch64-system-emulation-mode/
+http://suihkulokki.blogspot.tw/2014/08/testing-qemu-21-arm64-support.html
+http://blog.chinaunix.net/uid-25272011-id-3250053.html
+http://blog.csdn.net/jefbai/article/details/44901447
+http://www.tqcto.com/article/system/5715.html // make rootfs
+http://gogojesseco.blogspot.tw/2014_05_01_archive.html
